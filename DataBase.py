@@ -9,19 +9,20 @@ class Database_conect:
 
     def get_db_connection(self):
         try: 
+            print(os.getenv('DBNAME'))
             self.conn = psycopg2.connect(
-                dbname=DBNAME,
-                user=DBUSER,
-                password=DBPASSWORD,
-                host=DBHOST
+                dbname=os.getenv('DBNAME'),
+                user=os.getenv('DBUSER'),
+                password=os.getenv('DBPASSWORD'),
+                host=os.getenv('DBHOST')
             )
             self.cur = self.conn.cursor()
             print("Conexão Estabelecida")
         
         except psycopg2.Error as e:
             print(f"Erro ao conectar: {e}")
-            self.connection = None
-            self.cursor = None
+            self.conn = None
+            self.cur = None
     
     def execute_query(self, query, params=None):
         if not self.cur:
@@ -49,22 +50,34 @@ class Database_conect:
         self.get_db_connection()
         self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT) 
 
-        DBNAME = "estoque"
-        # Verifica se o data base ja existe
-        sql = (f"SELECT 'CREATE DATABASE {DBNAME}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{DBNAME}')")
+        os.environ['DBNAME'] = "estoque"
 
-        try:
-            self.execute_query(sql)
-        except:
-            self.cur.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(DBNAME)))
+        # Verifica se o data base ja existe
+        query = (f"SELECT 'CREATE DATABASE {os.getenv('DBNAME')}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{os.getenv('DBNAME')}')")
+
+        self.execute_query(query)
+        msg = self.cur.fetchone()
+
+        if( msg != None):
+            print("DataBase estoque Criada")
+            self.execute_query(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(os.getenv('DBNAME'))))
         
         self.close_connection()
 
     def create_tables(self):
         self.get_db_connection()
 
-        self.execute_query("CREATE TABLE IF NOT EXISTS produtos " \
-        "(id integer NOT NULL, nome varchar(60) NOT NULL, quantidade_compra int NOT NULL, preco_un float NOT NULL)")
+        # Criando Tabelas
+        self.execute_query("CREATE TABLE IF NOT EXISTS produto " \
+        "(id integer PRIMARY KEY NOT NULL, nome varchar(60) NOT NULL, quantidade_estoque int NOT NULL, preco_un float NOT NULL)")
+        self.conn.commit()
+
+        self.execute_query("CREATE TABLE IF NOT EXISTS pessoa " \
+        "(id integer PRIMARY KEY NOT NULL, nome varchar(255) NOT NULL, telefone varchar(11))")
+        self.conn.commit()
+
+        self.execute_query("CREATE TABLE IF NOT EXISTS compra " \
+        "(pessoa_id integer REFERENCES pessoa(id), quantidade_compra int NOT NULL, produto_id integer REFERENCES produto(id))")
         self.conn.commit()
 
         self.close_connection()

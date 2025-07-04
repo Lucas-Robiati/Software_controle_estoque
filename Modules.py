@@ -5,8 +5,3 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-
-DBNAME = os.getenv('DBNAME', 'postgres')
-DBUSER = os.getenv('DBUSER', 'postgres')
-DBPASSWORD = os.getenv('DBPASSWORD', 'postgres')
-DBHOST = os.getenv('DBHOST', 'localhost')
