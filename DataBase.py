@@ -8,39 +8,66 @@ class Database_conect:
         self.create_tables()
 
     def get_db_connection(self):
-        return psycopg2.connect(
-            dbname=DBNAME,
-            user=DBUSER,
-            password=DBPASSWORD,
-            host=DBHOST
-        )
+        try: 
+            self.conn = psycopg2.connect(
+                dbname=DBNAME,
+                user=DBUSER,
+                password=DBPASSWORD,
+                host=DBHOST
+            )
+            self.cur = self.conn.cursor()
+            print("Conexão Estabelecida")
+        
+        except psycopg2.Error as e:
+            print(f"Erro ao conectar: {e}")
+            self.connection = None
+            self.cursor = None
+    
+    def execute_query(self, query, params=None):
+        if not self.cur:
+            print("cur não inicializado. Conecte-se ao banco de dados primeiro.")
+            return None
+
+        try:
+            if params:
+                self.cur.execute(query, params)
+            else:
+                self.cur.execute(query)
+            return self.cur
+        except psycopg2.Error as e:
+            print(f"Erro ao executar a consulta: {e}")
+            return None
+    
+    def close_connection(self):
+        if self.cur:
+            self.cur.close()
+        if self.conn:
+            self.conn.close()
+        print("Conexão fechada.")
 
     def create_database(self):
-        self.conn = self.get_db_connection()
+        self.get_db_connection()
         self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT) 
-        self.cur = self.conn.cursor()
 
         DBNAME = "estoque"
+        # Verifica se o data base ja existe
         sql = (f"SELECT 'CREATE DATABASE {DBNAME}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{DBNAME}')")
 
         try:
-            self.cur.execute(sql)
+            self.execute_query(sql)
         except:
             self.cur.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(DBNAME)))
-
-        self.cur.close()
-        self.conn.close()
+        
+        self.close_connection()
 
     def create_tables(self):
-        self.conn = self.get_db_connection()
-        self.cur  = self.conn.cursor()
+        self.get_db_connection()
 
-        self.cur.execute("CREATE TABLE IF NOT EXISTS produtos " \
-        "(id integer NOT NULL, nome varchar(60) NOT NULL, quantidade_es int NOT NULL, preco float NOT NULL)")
+        self.execute_query("CREATE TABLE IF NOT EXISTS produtos " \
+        "(id integer NOT NULL, nome varchar(60) NOT NULL, quantidade_compra int NOT NULL, preco_un float NOT NULL)")
         self.conn.commit()
 
-        self.cur.close()
-        self.conn.close()
+        self.close_connection()
 
 db = Database_conect()
 #result = cur.fetchone()[0]
