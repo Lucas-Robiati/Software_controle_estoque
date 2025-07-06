@@ -21,8 +21,6 @@ class Application():
 
   
   def destroy_window(self):
-  # Função para tratar o fechamento da janela
-    plt.close(self.fig)   # Fecha a figura do Matplotlib
     root.destroy()        # Destroi a janela do Tkinter
 
 root = Tk()
