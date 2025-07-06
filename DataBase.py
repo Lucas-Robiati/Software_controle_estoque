@@ -73,11 +73,11 @@ class Database_conect:
         self.conn.commit()
 
         self.execute_query("CREATE TABLE IF NOT EXISTS pessoa " \
-        "(id integer PRIMARY KEY NOT NULL, nome varchar(255) NOT NULL, telefone varchar(11))")
+        "(id integer PRIMARY KEY NOT NULL, nome varchar(255) NOT NULL, telefone varchar(11), CPF varchar(12) NOT NULL)")
         self.conn.commit()
 
         self.execute_query("CREATE TABLE IF NOT EXISTS compra " \
-        "(pessoa_id integer REFERENCES pessoa(id), quantidade_compra int NOT NULL, produto_id integer REFERENCES produto(id))")
+        "(pessoa_id integer REFERENCES pessoa(id), quantidade_compra int NOT NULL, data DATE NOT NULL, produto_id integer REFERENCES produto(id))")
         self.conn.commit()
 
         self.close_connection()
