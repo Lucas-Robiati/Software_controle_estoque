@@ -60,7 +60,7 @@ class Database_conect:
 
         if( msg != None):
             print("DataBase estoque Criada")
-            self.execute_query(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(os.getenv('DBNAME'))))
+            self.execute_query(sql.SQL('CREATE DATABASE {}').format(sql.SQL(os.getenv('DBNAME'))))
         
         self.close_connection()
 
@@ -76,9 +76,14 @@ class Database_conect:
         "(id SERIAL PRIMARY KEY, nome varchar(255) NOT NULL, telefone varchar(11), email varchar(255), CPF varchar(15) NOT NULL, cep varchar(9) NOT NULL)")
         self.conn.commit()
 
-        self.execute_query("CREATE TABLE IF NOT EXISTS compra " \
-        "(pessoa_id integer REFERENCES pessoa(id), quant_compra int NOT NULL, data DATE NOT NULL, produto_id integer REFERENCES produto(id))")
+        self.execute_query("CREATE TABLE IF NOT EXISTS venda " \
+        "(id SERIAL PRIMARY KEY, pessoa_id integer REFERENCES pessoa(id), data DATE NOT NULL")
         self.conn.commit()
+
+        self.execute_query("CREATE TABLE IF NOT EXISTS produto_venda " \
+        "(venda_id REFERENCES venda(id), produto_id integer REFERENCES produto(id),quant_compra int NOT NULL)")
+        self.conn.commit()
+
 
         self.close_connection()
 
@@ -218,6 +223,54 @@ class Database_conect:
         else:
             self.close_connection()
             return "Pessoa nao encontrada"
+
+    def remove_usuario(self, cpf:str):
+
+        self.get_db_connection()
+
+        self.execute_query("SELECT CPF FROM pessoa WHERE CPF = %s", (cpf,))
+        
+        if (self.cur.fetchone() != None):
+            self.execute_query("DELETE FROM pessoa WHERE CPF = %s", (cpf,))
+            self.conn.commit()
+
+        else:
+            self.close_connection()
+            return "Pessoa nao encontrada"
+    
+    def remove_produto(self, id:int=None, produto:str=None):
+        
+        if((produto == None) or (id != None)):
+            self.get_db_connection()
+            
+            self.execute_query("SELECT id FROM produto WHERE id = %s", (id,))
+
+            if (self.cur.fetchone() != None):
+                self.execute_query("DELETE FROM produto WHERE id = %s", (id,))
+                self.conn.commit()
+                self.close_connection()
+                return
+        
+            else:
+                self.close_connection()
+                return "ID nao encontrado"
+
+        if((id == None) and (produto != None)):
+            self.get_db_connection()
+
+            self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
+            
+            if (self.cur.fetchone() != None):
+                self.execute_query("DELETE FROM produto WHERE nome = %s", (produto,))
+                self.conn.commit()
+                self.close_connection()
+                return
+        
+            else:
+                self.close_connection()
+                return "Produto nao encontrada"
+
+        return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
 db = Database_conect()
 #print(db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477156358-63","15780-000"))
