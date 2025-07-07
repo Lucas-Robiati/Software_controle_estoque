@@ -21,7 +21,12 @@ class Color(Enum):
   black = "#000000"         # Cor Preto
 
 class Validate:
-  def validate_cpf_entry(self, text):
+    # melhor usar em tudo, vou fazer um validador de inteiro e float pra alguns campos tenho pronto kkkkkkk
+  def format_str(text:str) -> str:
+    formatted_text = " ".join(text.split())
+    return formatted_text
+
+  def validate_cpf_entry(text):
     value = 0
 
     if ((text == "CPF")): return True 
