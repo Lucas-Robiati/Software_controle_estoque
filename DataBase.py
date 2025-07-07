@@ -90,7 +90,6 @@ class Database_conect:
         if (self.cur.fetchone() == None):
             self.execute_query("INSERT INTO pessoa (nome, telefone, CPF) VALUES (%s, %s, %s)",(name, telefone, cpf))
             self.conn.commit()
-
             self.close_connection()
             return None
 
@@ -99,14 +98,51 @@ class Database_conect:
 
     def add_produto(self, produto:str, quant:int, preco:float):
         self.get_db_connection()
-
-        self.execute_query("INSERT INTO produto (nome, quant_est, preco_un) VALUES (%s, %s, %s)",(produto, quant, preco))
-        self.conn.commit()
+        
+        self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
+        
+        if (self.cur.fetchone() == None):
+            self.execute_query("INSERT INTO produto (nome, quant_est, preco_un) VALUES (%s, %s, %s)",(produto, quant, preco))
+            self.conn.commit()
+            self.close_connection()
+            return None
 
         self.close_connection()
+        return "Produto ja cadastrado no sistema"
+
+    def update_produto(self, id=None, produto=None, new_preco=None, new_quant=None):
+
+        if((produto == None) or (id != None)):
+            self.get_db_connection()
+            
+            if(new_quant):
+                self.execute_query("UPDATE produto SET quant_est = {} WHERE id = {}",(new_quant,id))
+                self.conn.commit()
+                
+            if(new_preco):
+                self.execute_query("UPDATE produto SET preco_un = {} WHERE id = {}",(new_preco,id))
+                self.conn.commit()
+                
+            self.close_connection()
+            return
+
+        if((id == None) and (produto != None)):
+            self.get_db_connection()
+            
+            if(new_quant):
+                self.execute_query("UPDATE produto SET quant_est = {} WHERE nome = {}",(new_quant,id))
+                self.conn.commit()
+                
+            if(new_preco):
+                self.execute_query("UPDATE produto SET preco_un = {} WHERE nome = {}",(new_preco,id))
+                self.conn.commit()
+            
+            self.close_connection()
+            return
+        
+        return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
 db = Database_conect()
-db.add_pessoa("Lucas Robiati","17996683675","477156358-63")
-
+#db.add_pessoa("Lucas Robiati","17996683675","477156358-63")
 #db.add_produto("lima", 4, 2.90)
 #result = cur.fetchone()[0]

@@ -18,3 +18,20 @@ class Color(Enum):
   aqua_blue = "#033f70"     # Cor Verde Agua
   white = "#e8e8ed"         # Cor White
   black = "#000000"         # Cor Preto
+
+class Validate:
+  def validate_cpf(self, text):
+    value = 0
+
+    if ((text == "CPF")): return True 
+
+    if ((len(text) == 10) and (text == "-")): return True # Passou na validação
+    
+    if(len(text) < 10):
+      try:
+        value == int(text)
+      except ValueError:
+        return False    
+    if( 10 < len(text) <= 12): return True                              # Não passou na validação
+    
+    return (value)             # Retorna o valor valido
