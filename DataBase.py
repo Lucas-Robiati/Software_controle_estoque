@@ -173,59 +173,103 @@ class Database_conect:
         return resultados
 
 
-    def update_produto(self, id=None, produto=None, new_preco_un=None, new_quant=None, new_preco_cus=None):
+    def update_produto(self, id=None, produto=None, new_nome=None, new_preco_un=None, new_quant=None, new_estoque_min=None, new_preco_cus=None):
 
-        if((produto == None) or (id != None)):
+        if (produto is None) or (id is not None):
             self.get_db_connection()
-            
+    
             self.execute_query("SELECT id FROM produto WHERE id = %s", (id,))
-
-            if (self.cur.fetchone() != None):
-                if(new_quant):
-                    self.execute_query("UPDATE produto SET quant_est = %s WHERE id = %s",(new_quant,id))
+    
+            if self.cur.fetchone() is not None:
+                if new_nome:
+                    self.execute_query("UPDATE produto SET nome = %s WHERE id = %s", (new_nome, id))
                     self.conn.commit()
-
-                if(new_preco_un):
-                    self.execute_query("UPDATE produto SET preco_un = %s WHERE id = %s",(new_preco_un,id))
+    
+                if new_quant:
+                    self.execute_query("UPDATE produto SET quant_est = %s WHERE id = %s", (new_quant, id))
                     self.conn.commit()
-                
-                if(new_preco_cus):
-                    self.execute_query("UPDATE produto SET preco_custo = %s WHERE id = %s",(new_preco_cus,id))
+    
+                if new_estoque_min:
+                    self.execute_query("UPDATE produto SET quant_est_min = %s WHERE id = %s", (new_estoque_min, id))
                     self.conn.commit()
-                
+    
+                if new_preco_un:
+                    self.execute_query("UPDATE produto SET preco_un = %s WHERE id = %s", (new_preco_un, id))
+                    self.conn.commit()
+    
+                if new_preco_cus:
+                    self.execute_query("UPDATE produto SET preco_custo = %s WHERE id = %s", (new_preco_cus, id))
+                    self.conn.commit()
+    
                 self.close_connection()
                 return
-            
-            else: 
+    
+            else:
                 self.close_connection()
                 return "ID de produto nao encontrado"
-
-        if((id == None) and (produto != None)):
+    
+        if (id is None) and (produto is not None):
             self.get_db_connection()
-
+    
             self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
-            
-            if (self.cur.fetchone() != None):
-                if(new_quant):
-                    self.execute_query("UPDATE produto SET quant_est = %s WHERE nome = %s",(new_quant,produto))
+    
+            if self.cur.fetchone() is not None:
+                if new_nome:
+                    self.execute_query("UPDATE produto SET nome = %s WHERE nome = %s", (new_nome, produto))
                     self.conn.commit()
-
-                if(new_preco_un):
-                    self.execute_query("UPDATE produto SET preco_un = %s WHERE nome = %s",(new_preco_un,produto))
+    
+                if new_quant:
+                    self.execute_query("UPDATE produto SET quant_est = %s WHERE nome = %s", (new_quant, produto))
                     self.conn.commit()
-
-                if(new_preco_cus):
-                    self.execute_query("UPDATE produto SET preco_custo = %s WHERE nome = %s",(new_preco_cus,produto))
+    
+                if new_estoque_min:
+                    self.execute_query("UPDATE produto SET estoque_min = %s WHERE nome = %s", (new_estoque_min, produto))
                     self.conn.commit()
-
+    
+                if new_preco_un:
+                    self.execute_query("UPDATE produto SET preco_un = %s WHERE nome = %s", (new_preco_un, produto))
+                    self.conn.commit()
+    
+                if new_preco_cus:
+                    self.execute_query("UPDATE produto SET preco_custo = %s WHERE nome = %s", (new_preco_cus, produto))
+                    self.conn.commit()
+    
                 self.close_connection()
                 return
-            
-            else: 
+    
+            else:
                 self.close_connection()
                 return "Produto nao encontrado"
-        
+    
         return "Identificadores vazios, coloque almenos um nome produto ou o id"
+
+    def remove_produto(self, id: int = None, produto: str = None):
+        if id is None and produto is None:
+            return "Identificadores vazios, forneça o ID ou o nome do produto"
+    
+        self.get_db_connection()
+    
+        if id is not None:
+            self.execute_query("SELECT id FROM produto WHERE id = %s", (id,))
+            if self.cur.fetchone() is not None:
+                self.execute_query("DELETE FROM produto WHERE id = %s", (id,))
+                self.conn.commit()
+                self.close_connection()
+                return None
+            else:
+                self.close_connection()
+                return "ID não encontrado"
+    
+        if produto is not None:
+            self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
+            if self.cur.fetchone() is not None:
+                self.execute_query("DELETE FROM produto WHERE nome = %s", (produto,))
+                self.conn.commit()
+                self.close_connection()
+                return None
+            else:
+                self.close_connection()
+                return "Produto não encontrado"
 
 
     def update_usuario(self, cpf=None, new_name=None, new_telefone=None, new_cpf=None, new_cep=None, new_email=None):
