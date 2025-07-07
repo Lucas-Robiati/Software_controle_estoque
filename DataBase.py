@@ -94,8 +94,8 @@ class Database_conect:
             )""",
 
             """CREATE TABLE IF NOT EXISTS produto_venda (
-                venda_id INT REFERENCES venda(id),
-                produto_id INT REFERENCES produto(id),
+                venda_id INT REFERENCES venda(id) ON DELETE CASCADE,
+                produto_id INT REFERENCES produto(id) ON DELETE CASCADE,
                 quant_compra INT NOT NULL
             )"""
         ]
