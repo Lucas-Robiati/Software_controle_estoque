@@ -82,7 +82,7 @@ class Database_conect:
 
         self.close_connection()
 
-    def add_pessoa(self, name:str, telefone:str, cpf:str, email:str, cep:str):
+    def add_pessoa(self, name:str, telefone:str, email:str, cpf:str, cep:str):
         self.get_db_connection()
 
         self.execute_query("SELECT CPF FROM pessoa WHERE CPF = %s", (cpf,))
@@ -95,6 +95,26 @@ class Database_conect:
 
         self.close_connection()
         return "CPF invalido - Usuario ja cadastrado"
+
+    def listar_clientes(self):
+        self.get_db_connection()
+        self.execute_query("SELECT nome, telefone, email, CPF, cep FROM pessoa")
+        resultados = self.cur.fetchall()
+        self.close_connection()
+        return resultados
+
+    def excluir_cliente(self, cpf:str):
+        self.get_db_connection()
+
+        self.execute_query("SELECT id FROM pessoa WHERE CPF = %s", (cpf,))
+        if self.cur.fetchone() is None:
+            self.close_connection()
+            return "Cliente não encontrado"
+
+        self.execute_query("DELETE FROM pessoa WHERE CPF = %s", (cpf,))
+        self.conn.commit()
+        self.close_connection()
+        return None
 
     def add_produto(self, produto:str, quant:int, preco_un:float, preco_cus:float):
         self.get_db_connection()
@@ -200,7 +220,7 @@ class Database_conect:
             return "Pessoa nao encontrada"
 
 db = Database_conect()
-print(db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477156358-63","15780-000"))
+#print(db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477156358-63","15780-000"))
 #db.update_usuario(cpf="477156358-63", new_name="Paulinho do Grau")
-db.add_produto("lima", 4, 2.90, 0.50)
+#db.add_produto("lima", 4, 2.90, 0.50)
 #print(db.update_produto(produto="limo",new_quant=420,new_preco=8.40))
