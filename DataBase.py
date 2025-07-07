@@ -65,25 +65,49 @@ class Database_conect:
         self.close_connection()
 
     def create_tables(self):
+
         self.get_db_connection()
 
-        # Criando Tabelas
-        self.execute_query("CREATE TABLE IF NOT EXISTS produto " \
-        "(id SERIAL PRIMARY KEY NOT NULL, nome varchar(60) NOT NULL, quant_est int NOT NULL, quant_est_min int NOT NULL, preco_un float NOT NULL, preco_custo float NOT NULL)")
-        self.conn.commit()
+        queries = [
+            """CREATE TABLE IF NOT EXISTS produto (
+                id SERIAL PRIMARY KEY,
+                nome VARCHAR(60) NOT NULL,
+                quant_est INT NOT NULL,
+                quant_est_min INT NOT NULL,
+                preco_un FLOAT NOT NULL,
+                preco_custo FLOAT NOT NULL
+            )""",
 
-        self.execute_query("CREATE TABLE IF NOT EXISTS pessoa " \
-        "(id SERIAL PRIMARY KEY, nome varchar(255) NOT NULL, telefone varchar(11), email varchar(255), CPF varchar(15) NOT NULL, cep varchar(9) NOT NULL)")
-        self.conn.commit()
+            """CREATE TABLE IF NOT EXISTS pessoa (
+                id SERIAL PRIMARY KEY,
+                nome VARCHAR(255) NOT NULL,
+                telefone VARCHAR(11),
+                email VARCHAR(255),
+                CPF VARCHAR(15) NOT NULL,
+                cep VARCHAR(9) NOT NULL
+            )""",
 
-        self.execute_query("CREATE TABLE IF NOT EXISTS venda " \
-        "(id SERIAL PRIMARY KEY, pessoa_id integer REFERENCES pessoa(id), data DATE NOT NULL")
-        self.conn.commit()
+            """CREATE TABLE IF NOT EXISTS venda (
+                id SERIAL PRIMARY KEY,
+                pessoa_id INT REFERENCES pessoa(id),
+                data DATE NOT NULL
+            )""",
 
-        self.execute_query("CREATE TABLE IF NOT EXISTS produto_venda " \
-        "(venda_id REFERENCES venda(id), produto_id integer REFERENCES produto(id),quant_compra int NOT NULL)")
-        self.conn.commit()
+            """CREATE TABLE IF NOT EXISTS produto_venda (
+                venda_id INT REFERENCES venda(id),
+                produto_id INT REFERENCES produto(id),
+                quant_compra INT NOT NULL,
+                PRIMARY KEY (venda_id, produto_id)
+            )"""
+        ]
 
+        for query in queries:   
+            try:
+                self.cur.execute(query)
+                self.conn.commit()
+            except psycopg2.Error as e:
+                print(f"Erro criando tabelas: {e}")
+                self.conn.rollback()
 
         self.close_connection()
 
@@ -267,6 +291,6 @@ db = Database_conect()
 #db.remove_usuario("477.156.358-63")
 #print(db.remove_usuario("477.156.358-64"))
 #db.update_usuario(cpf="477156358-63", new_name="Paulinho do Grau")
-#print(db.add_produto("lima", 4, 2.90, 0.50))
+print(db.add_produto("lima", 4, 2, 2.90, 0.50))
 #print(db.remove_produto(produto="lima"))
 #print(db.update_produto(produto="limo",new_quant=420,new_preco=8.40))
