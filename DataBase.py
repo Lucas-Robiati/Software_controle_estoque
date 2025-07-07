@@ -69,18 +69,44 @@ class Database_conect:
 
         # Criando Tabelas
         self.execute_query("CREATE TABLE IF NOT EXISTS produto " \
-        "(id integer PRIMARY KEY NOT NULL, nome varchar(60) NOT NULL, quantidade_estoque int NOT NULL, preco_un float NOT NULL)")
+        "(id SERIAL PRIMARY KEY NOT NULL, nome varchar(60) NOT NULL, quant_est int NOT NULL, preco_un float NOT NULL)")
         self.conn.commit()
 
         self.execute_query("CREATE TABLE IF NOT EXISTS pessoa " \
-        "(id integer PRIMARY KEY NOT NULL, nome varchar(255) NOT NULL, telefone varchar(11), CPF varchar(12) NOT NULL)")
+        "(id SERIAL PRIMARY KEY, nome varchar(255) NOT NULL, telefone varchar(11), CPF varchar(12) NOT NULL)")
         self.conn.commit()
 
         self.execute_query("CREATE TABLE IF NOT EXISTS compra " \
-        "(pessoa_id integer REFERENCES pessoa(id), quantidade_compra int NOT NULL, data DATE NOT NULL, produto_id integer REFERENCES produto(id))")
+        "(pessoa_id integer REFERENCES pessoa(id), quant_compra int NOT NULL, data DATE NOT NULL, produto_id integer REFERENCES produto(id))")
+        self.conn.commit()
+
+        self.close_connection()
+
+    def add_pessoa(self, name:str, telefone:str, cpf:str):
+        self.get_db_connection()
+
+        self.execute_query("SELECT CPF FROM pessoa WHERE CPF = %s", (cpf,))
+        
+        if (self.cur.fetchone() == None):
+            self.execute_query("INSERT INTO pessoa (nome, telefone, CPF) VALUES (%s, %s, %s)",(name, telefone, cpf))
+            self.conn.commit()
+
+            self.close_connection()
+            return None
+
+        self.close_connection()
+        return "CPF invalido - Usuario ja cadastrado"
+
+    def add_produto(self, produto:str, quant:int, preco:float):
+        self.get_db_connection()
+
+        self.execute_query("INSERT INTO produto (nome, quant_est, preco_un) VALUES (%s, %s, %s)",(produto, quant, preco))
         self.conn.commit()
 
         self.close_connection()
 
 db = Database_conect()
+db.add_pessoa("Lucas Robiati","17996683675","477156358-63")
+
+#db.add_produto("lima", 4, 2.90)
 #result = cur.fetchone()[0]
