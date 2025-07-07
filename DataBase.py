@@ -69,7 +69,7 @@ class Database_conect:
 
         # Criando Tabelas
         self.execute_query("CREATE TABLE IF NOT EXISTS produto " \
-        "(id SERIAL PRIMARY KEY NOT NULL, nome varchar(60) NOT NULL, quant_est int NOT NULL, preco_un float NOT NULL, preco_custo float NOT NULL)")
+        "(id SERIAL PRIMARY KEY NOT NULL, nome varchar(60) NOT NULL, quant_est int NOT NULL, quant_est_min int NOT NULL, preco_un float NOT NULL, preco_custo float NOT NULL)")
         self.conn.commit()
 
         self.execute_query("CREATE TABLE IF NOT EXISTS pessoa " \
@@ -101,19 +101,28 @@ class Database_conect:
         self.close_connection()
         return "CPF invalido - Usuario ja cadastrado"
 
-    def add_produto(self, produto:str, quant:int, preco_un:float, preco_cus:float):
+    def add_produto(self, produto:str, quant:int, quant_min:int, preco_un:float, preco_cus:float):
         self.get_db_connection()
         
         self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
         
         if (self.cur.fetchone() == None):
-            self.execute_query("INSERT INTO produto (nome, quant_est, preco_un, preco_custo) VALUES (%s, %s, %s, %s)",(produto, quant, preco_un, preco_cus))
+            self.execute_query("INSERT INTO produto (nome, quant_est, quant_est_min, preco_un, preco_custo) VALUES (%s, %s, %s, %s, %s)",(produto, quant, quant_min, preco_un, preco_cus))
             self.conn.commit()
             self.close_connection()
             return None
 
         self.close_connection()
         return "Produto ja cadastrado no sistema"
+
+    def get_produtos(self):
+        self.get_db_connection()
+        self.execute_query("SELECT id, nome, quant_est, quant_est_min, preco_un, preco_custo FROM produto")
+        resultados = self.cur.fetchall()
+        self.close_connection()
+        
+        return resultados
+
 
     def update_produto(self, id=None, produto=None, new_preco_un=None, new_quant=None, new_preco_cus=None):
 
