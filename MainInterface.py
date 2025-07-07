@@ -4,7 +4,7 @@ from tkinter import messagebox
 
 from Modules import *
 
-class Application():
+class Application(Validate):
   def __init__(self, root:'Tk'):
     self.root = root                               
     self.window()                                  

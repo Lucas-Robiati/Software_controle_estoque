@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import numpy as np
 from enum import Enum
 import os
+import re
 
 from Pessoa import Pessoa
 
@@ -20,18 +21,36 @@ class Color(Enum):
   black = "#000000"         # Cor Preto
 
 class Validate:
-  def validate_cpf(self, text):
+  def validate_cpf_entry(self, text):
     value = 0
 
     if ((text == "CPF")): return True 
 
     if ((len(text) == 10) and (text == "-")): return True # Passou na validação
     
+    if (text == "."): return True
+    
     if(len(text) < 10):
       try:
         value == int(text)
       except ValueError:
-        return False    
-    if( 10 < len(text) <= 12): return True                              # Não passou na validação
+        return False      
+    return (value)
+
+  def validate_cpf(cpf: str) -> bool:
+    # Expressão regular para formato exato 000.000.000-00
+    if not re.match(r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', cpf):
+        return False
+
+    numeros = [int(char) for char in cpf if char.isdigit()]
     
-    return (value)             # Retorna o valor valido
+    if all(x == numeros[0] for x in numeros):
+        return False
+
+    soma = sum(numeros[i] * (10 - i) for i in range(9))
+    digito1 = (soma * 10 % 11) % 10
+    
+    soma = sum(numeros[i] * (11 - i) for i in range(10))
+    digito2 = (soma * 10 % 11) % 10
+
+    return numeros[9] == digito1 and numeros[10] == digito2
