@@ -23,6 +23,5 @@ class Application(Validate):
   def destroy_window(self):
     root.destroy()        # Destroi a janela do Tkinter
 
-
 root = Tk()
 Application(root)
