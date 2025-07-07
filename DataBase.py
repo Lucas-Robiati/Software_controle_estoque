@@ -90,14 +90,13 @@ class Database_conect:
             """CREATE TABLE IF NOT EXISTS venda (
                 id SERIAL PRIMARY KEY,
                 pessoa_id INT REFERENCES pessoa(id),
-                data DATE NOT NULL
+                data TIMESTAMP NOT NULL
             )""",
 
             """CREATE TABLE IF NOT EXISTS produto_venda (
                 venda_id INT REFERENCES venda(id),
                 produto_id INT REFERENCES produto(id),
-                quant_compra INT NOT NULL,
-                PRIMARY KEY (venda_id, produto_id)
+                quant_compra INT NOT NULL
             )"""
         ]
 
@@ -138,6 +137,32 @@ class Database_conect:
 
         self.close_connection()
         return "Produto ja cadastrado no sistema"
+
+    def new_venda(self, produto:dict, cpf:str):
+        self.get_db_connection()
+
+        self.execute_query("SELECT id, CPF FROM pessoa WHERE CPF = %s", (cpf,))
+        msg = self.cur.fetchone()[0]
+
+        if (msg == None):
+            return "Usuario sem cadastro"
+        
+        self.execute_query("SELECT NOW()")
+        time = self.cur.fetchone()
+        
+        self.execute_query("INSERT INTO venda (pessoa_id, data) VALUES (%s, %s)", (msg, time))
+        self.conn.commit()
+
+        self.execute_query("SELECT id FROM venda WHERE data = %s and pessoa_id = %s", (time, msg))
+        msg = self.cur.fetchone()[0]
+        
+        for key in produto.keys():
+            self.execute_query("SELECT id FROM produto WHERE nome = %s", (key,))
+            produto_id = self.cur.fetchone()[0]
+            self.execute_query("INSERT INTO produto_venda (venda_id, produto_id, quant_compra) VALUES (%s, %s, %s)",(msg, produto_id, produto[key]))
+        
+        self.conn.commit()
+        self.close_connection()
 
     def get_produtos(self):
         self.get_db_connection()
@@ -285,12 +310,8 @@ class Database_conect:
 
         return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
-#db = Database_conect()
-#db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
-#db.add_pessoa("flavinho do pneu","17996683675", "lucas@gmail.com","145.264.321-64","15790-000")
-#db.remove_usuario("477.156.358-63")
-#print(db.remove_usuario("477.156.358-64"))
-#db.update_usuario(cpf="477156358-63", new_name="Paulinho do Grau")
-#print(db.add_produto("lima", 4, 2, 2.90, 0.50))
-#print(db.remove_produto(produto="lima"))
-#print(db.update_produto(produto="limo",new_quant=420,new_preco=8.40))
+venda = {'lima': 2}
+db = Database_conect()
+db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
+db.add_produto("lima", 4, 2, 2.90, 0.50)
+db.new_venda(venda,"477.156.358-63")
