@@ -96,8 +96,29 @@ class Database_conect:
             """CREATE TABLE IF NOT EXISTS produto_venda (
                 venda_id INT REFERENCES venda(id) ON DELETE CASCADE,
                 produto_id INT REFERENCES produto(id) ON DELETE CASCADE,
-                quant_compra INT NOT NULL
-            )"""
+                quant_compra INT NOT NULL,
+                valor_unit FLOAT NOT NULL
+            )""",
+
+            """CREATE OR REPLACE VIEW relatorio_vendas AS
+                SELECT 
+                    v.id AS id_venda,
+                    v.data::DATE AS data_venda,
+                    p.cpf AS cpf_cliente,
+                    pr.nome AS produto,
+                    pv.quant_compra AS quantidade,
+                    pv.valor_unit
+                FROM 
+                    venda v
+                JOIN 
+                    pessoa p ON v.pessoa_id = p.id
+                JOIN 
+                    produto_venda pv ON v.id = pv.venda_id
+                JOIN 
+                    produto pr ON pv.produto_id = pr.id
+                ORDER BY 
+                    v.data DESC"""
+
         ]
 
         for query in queries:   
@@ -109,6 +130,14 @@ class Database_conect:
                 self.conn.rollback()
 
         self.close_connection()
+
+    def get_relatorio_vendas(self):
+        self.get_db_connection()
+        self.execute_query("SELECT * FROM relatorio_vendas")
+        resultados = self.cur.fetchall()
+        self.close_connection()
+        return resultados
+
 
     def add_pessoa(self, name:str, telefone:str, email:str, cpf:str, cep:str):
         self.get_db_connection()
@@ -158,37 +187,53 @@ class Database_conect:
         self.close_connection()
         return "Produto ja cadastrado no sistema"
 
-    def new_venda(self, produto:dict, cpf:str):
+    def new_venda(self, produto: dict, cpf: str):
         self.get_db_connection()
 
-        self.execute_query("SELECT id, CPF FROM pessoa WHERE CPF = %s", (cpf,))
-        msg = self.cur.fetchone()[0]
+        # Verifica se cliente existe
+        self.execute_query("SELECT id FROM pessoa WHERE cpf = %s", (cpf,))
+        resultado_cliente = self.cur.fetchone()
+        if resultado_cliente is None:
+            self.close_connection()
+            return "Usuário sem cadastro"
 
-        if (msg == None):
-            return "Usuario sem cadastro"
-        
-        for key in produto.keys():
-            self.execute_query("SELECT quant_est FROM produto WHERE nome = %s",(key,))
-            estoque = self.cur.fetchone()[0]
-            if(estoque < produto[key]): return f"Produdo {key} nao tem esta quantidade em estoque"
+        pessoa_id = resultado_cliente[0]
 
-        self.execute_query("SELECT NOW()")
-        time = self.cur.fetchone()
-        
-        self.execute_query("INSERT INTO venda (pessoa_id, data) VALUES (%s, %s)", (msg, time))
-        self.conn.commit()
+        # Verifica se há estoque suficiente
+        for nome_produto, quantidade in produto.items():
+            self.execute_query("SELECT quant_est FROM produto WHERE nome = %s", (nome_produto,))
+            estoque = self.cur.fetchone()
+            if estoque is None:
+                self.close_connection()
+                return f"Produto '{nome_produto}' não encontrado"
+            if estoque[0] < quantidade:
+                self.close_connection()
+                return f"Produto '{nome_produto}' não tem esta quantidade em estoque"
 
-        self.execute_query("SELECT id FROM venda WHERE data = %s and pessoa_id = %s", (time, msg))
-        msg = self.cur.fetchone()[0]
-        
-        for key in produto.keys():
-            self.execute_query("SELECT id FROM produto WHERE nome = %s", (key,))
-            produto_id = self.cur.fetchone()[0]
-            self.execute_query("INSERT INTO produto_venda (venda_id, produto_id, quant_compra) VALUES (%s, %s, %s)",(msg, produto_id, produto[key]))
-            self.execute_query("UPDATE produto SET quant_est = (quant_est - %s) WHERE nome = %s", (produto[key], key))
+        # Cria venda e obtém ID com RETURNING
+        self.execute_query("INSERT INTO venda (pessoa_id, data) VALUES (%s, NOW()) RETURNING id", (pessoa_id,))
+        venda_id = self.cur.fetchone()[0]
+
+        # Para cada produto, registra venda e atualiza estoque
+        for nome_produto, quantidade in produto.items():
+            self.execute_query("SELECT id, preco_un FROM produto WHERE nome = %s", (nome_produto,))
+            resultado_prod = self.cur.fetchone()
+            produto_id, valor_unitario = resultado_prod
+
+            # Insere na tabela produto_venda com valor_unitario
+            self.execute_query("""
+                INSERT INTO produto_venda (venda_id, produto_id, quant_compra, valor_unitario)
+                VALUES (%s, %s, %s, %s)
+            """, (venda_id, produto_id, quantidade, valor_unitario))
+
+            # Atualiza estoque
+            self.execute_query("""
+                UPDATE produto SET quant_est = quant_est - %s WHERE id = %s
+            """, (quantidade, produto_id))
 
         self.conn.commit()
         self.close_connection()
+
 
     def get_produtos(self):
         self.get_db_connection()
@@ -404,8 +449,8 @@ class Database_conect:
 
         return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
-#venda = {'lima': 5}
-#db = Database_conect()
-#db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
-#db.add_produto("lima", 4, 2, 2.90, 0.50)
-#print(db.new_venda(venda,"477.156.358-63"))
+venda = {'lima': 5}
+db = Database_conect()
+db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
+db.add_produto("lima", 4, 2, 2.90, 0.50)
+print(db.new_venda(venda,"477.156.358-63"))

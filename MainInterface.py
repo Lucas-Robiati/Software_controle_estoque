@@ -43,6 +43,7 @@ class Application(Validate):
         self.btn_entrada = self.create_button(self.sidebar, "Entrada", command_func=self.show_entrada)
         self.btn_saida = self.create_button(self.sidebar, "Venda", command_func=self.show_vendas)
         self.btn_cliente = self.create_button(self.sidebar, "Clientes", command_func=self.show_clientes)
+        self.btn_cliente = self.create_button(self.sidebar, "Relatório Vendas", command_func=self.show_relatorio)
 
     def layout_header(self):
         """Configura o cabeçalho"""
@@ -1001,6 +1002,47 @@ class Application(Validate):
         self.tree_cli.delete(*self.tree_cli.get_children())
         for cli in self.banco_dados.listar_clientes():
             self.tree_cli.insert("", "end", values=cli)
+
+    def show_relatorio(self):
+        """Mostra o relatório de vendas"""
+        self.clear_main_content()
+    
+        self.grid_relatorio = Frame(self.frame_principal, background=Color.white.value)
+        self.grid_relatorio.grid(row=1, column=0, sticky="nsew", padx=100, pady=75)
+        self.frame_principal.grid_rowconfigure(1, weight=1)
+        self.grid_relatorio.grid_columnconfigure(0, weight=1)
+    
+        Label(
+            self.grid_relatorio,
+            text="Relatório de Vendas",
+            font=("Helvetica", 16, "bold"),
+            bg=Color.white.value
+        ).grid(row=0, column=0, pady=(10, 20), sticky="n")
+    
+        # Treeview
+        colunas = ("id_venda", "cpf_cliente", "data_venda", "produto", "quantidade", "valor_unitario")
+        self.tree_relatorio = ttk.Treeview(
+            self.grid_relatorio,
+            columns=colunas,
+            show="headings"
+        )
+        self.tree_relatorio.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.grid_relatorio.grid_rowconfigure(1, weight=1)
+    
+        for col in colunas:
+            self.tree_relatorio.heading(col, text=col.upper())
+            self.tree_relatorio.column(col, anchor="center", width=120)
+    
+        # Scrollbar vertical
+        scroll_y = Scrollbar(self.grid_relatorio, orient="vertical", command=self.tree_relatorio.yview)
+        scroll_y.grid(row=1, column=1, sticky="ns")
+        self.tree_relatorio.configure(yscrollcommand=scroll_y.set)
+    
+        # Carrega os dados do banco
+        relatorio = self.banco_dados.get_relatorio_vendas()
+        for linha in relatorio:
+            self.tree_relatorio.insert("", "end", values=linha)
+
 
     # ==============================================================
     # MÉTODOS AUXILIARES
