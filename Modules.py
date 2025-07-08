@@ -73,38 +73,6 @@ class Validate:
     # Qualquer outra condição inválida
     return False
 
-
-
-
-
-  def validate_cpf_entr(self, text):
-    # Permite string vazia ou caracteres únicos especiais durante edição
-    if text in ["", ".", "-"]:
-        return True
-        
-    # Verifica se todos os caracteres são permitidos
-    for char in text:
-        if not (char.isdigit() or char in ['.', '-']):
-            return False
-            
-    # Verifica posicionamento correto dos caracteres especiais
-    for i, char in enumerate(text):
-        if char in ['.', '-']:
-            if i not in [3, 7, 11]:  # Posições válidas para '.' e '-'
-                return False
-                
-    # Verifica quantidade máxima de caracteres
-    if len(text) > 14:
-        return False
-        
-    # Verifica formatação parcial
-    parts = text.replace('-', '.').split('.')
-    for i, part in enumerate(parts[:-1]):
-        if part != '' and len(part) > 3:
-            return False
-            
-    return True
-
   def validate_cpf(cpf: str) -> bool:
     # Expressão regular para formato exato 000.000.000-00
     if not re.match(r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', cpf):
