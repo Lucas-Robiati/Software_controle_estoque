@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk, messagebox
+import re
 
 from DataBase import *
 from Modules  import *
@@ -219,149 +220,183 @@ class Application(Validate):
                 messagebox.showinfo("Sucesso", "Produto deletado!")
 
     def _show_clientes(self):
-        """Tela de cadastro/consulta de clientes."""
-        self.clear_main_content()
+       """Tela de cadastro/consulta de clientes."""
+       self.clear_main_content()
+   
+       # ------------ Cabeçalho da página --------------
+       page = Frame(self.frame_principal, bg=Color.white.value)
+       page.grid(row=1, column=0, sticky="nsew", padx=50, pady=20)
+       self.frame_principal.grid_rowconfigure(1, weight=1)
+       self.frame_principal.grid_columnconfigure(0, weight=1)
+   
+       # ------------ Formulário -----------------------
+       form = Frame(page, bg=Color.white.value)
+       form.grid(row=0, column=0, sticky="ew")
+       form.grid_columnconfigure((0, 1), weight=1)
+   
+       self.e_cli_nome  = self._create_label_entry(form, "Nome",     0, 0)
+       self.e_cli_tel   = self._create_label_entry(form, "Telefone", 0, 1)
+       self.e_cli_email = self._create_label_entry(form, "Email",    2, 0)
+       self.e_cli_cpf   = self._create_label_entry(form, "CPF",      2, 1)
+       self.e_cli_cep   = self._create_label_entry(form, "CEP",      4, 0)
+   
+       # Flag p/ saber se estamos editando
+       self._editar_cpf_ref: str | None = None
+   
+       # ------------ Helpers dentro da view -----------
+       def salvar_cliente():
+           nome  = self.e_cli_nome.get().strip()
+           tel   = self.e_cli_tel.get().strip()
+           email = self.e_cli_email.get().strip()
+           cpf   = self.e_cli_cpf.get().strip()
+           cep   = self.e_cli_cep.get().strip()
+   
+           # ----------- Validações
+           if not all((nome, tel, email, cpf, cep)):
+               return messagebox.showerror("Erro", "Todos os campos são obrigatórios.")
+   
+           if not re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", nome):
+               return messagebox.showerror("Erro", "Nome não pode conter números ou caracteres especiais.")
+   
+           if not re.fullmatch(r"\d{10,11}", tel):
+               return messagebox.showerror("Erro", "Telefone deve conter 10 ou 11 dígitos numéricos.")
+   
+           if not re.fullmatch(r"[\w\.-]+@[\w\.-]+\.\w{2,}", email):
+               return messagebox.showerror("Erro", "Email inválido. Ex.: usuario@gmail.com")
 
-        page = Frame(self.frame_principal, bg=Color.white.value)
-        page.grid(row=1, column=0, sticky="nsew", padx=50, pady=20)
-        self.frame_principal.grid_rowconfigure(1, weight=1)
-        self.frame_principal.grid_columnconfigure(0, weight=1)
+           if not re.fullmatch(r"\d{3}\.\d{3}\.\d{3}-\d{2}", cpf):
+               return messagebox.showerror("Erro", "CPF deve estar no formato 000.000.000-00")
+           
+           if not re.fullmatch(r"\d{5}-\d{3}", cep):
+               return messagebox.showerror("Erro", "CEP deve estar no formato 00000-000")
+   
+   
+           # ----------- Chamada ao banco ---------------
+           if self._editar_cpf_ref:
+               erro = self.banco_dados.update_usuario(
+                   cpf=self._editar_cpf_ref,
+                   new_name=nome, new_telefone=tel,
+                   new_email=email, new_cpf=cpf, new_cep=cep
+               )
+           else:
+               erro = self.banco_dados.add_pessoa(nome, tel, email, cpf, cep)
+   
+           if erro:
+               return messagebox.showerror("Erro", erro)
+   
+           msg = "atualizado" if self._editar_cpf_ref else "adicionado"
+           messagebox.showinfo("Sucesso", f"Cliente {msg} com sucesso! 🎉")
+   
+           self._editar_cpf_ref = None
+           _limpar_campos()
+           self._carregar_clientes()
+   
+       def _limpar_campos():
+           for widget in (self.e_cli_nome, self.e_cli_tel,
+                          self.e_cli_email, self.e_cli_cpf, self.e_cli_cep):
+               widget.delete(0, END)
+   
+       # ----------- Botão Salvar ----------------------
+       Button(
+           form, text="Salvar", bg=Color.light_blue.value, fg="white",
+           font=("Arial", 12, "bold"), command=salvar_cliente
+       ).grid(row=5, column=1, pady=20)
+   
+       # ------------- Treeview ------------------------
+       tree_frame = Frame(page)
+       tree_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=10)
+       page.grid_rowconfigure(2, weight=1)
+       tree_frame.grid_rowconfigure(0, weight=1)
+       tree_frame.grid_columnconfigure(0, weight=1)
+   
+       cols = ("nome", "telefone", "email", "cpf", "cep")
+       self.tree_cli = ttk.Treeview(tree_frame, columns=cols, show="headings")
+       for col in cols:
+           self.tree_cli.heading(col, text=col.upper())
+           self.tree_cli.column(col, width=110, anchor="center")
+       self.tree_cli.grid(row=0, column=0, sticky="nsew")
+   
+       scroll_cli = Scrollbar(tree_frame, orient="vertical", command=self.tree_cli.yview)
+       scroll_cli.grid(row=0, column=1, sticky="ns")
+       self.tree_cli.configure(yscrollcommand=scroll_cli.set)
+   
+       # ------------- Botões Extras -------------------
+       def preencher_para_edicao():
+           item = self.tree_cli.focus()
+           if not item:
+               return messagebox.showwarning("Aviso", "Selecione um cliente.")
+           valores = self.tree_cli.item(item, "values")
+           self._editar_cpf_ref = valores[3]
+           self.e_cli_nome.delete(0, END);  self.e_cli_nome.insert(0, valores[0])
+           self.e_cli_tel.delete(0, END);   self.e_cli_tel.insert(0, valores[1])
+           self.e_cli_email.delete(0, END); self.e_cli_email.insert(0, valores[2])
+           self.e_cli_cpf.delete(0, END);   self.e_cli_cpf.insert(0, valores[3])
+           self.e_cli_cep.delete(0, END);   self.e_cli_cep.insert(0, valores[4])
+   
+       def excluir_cliente():
+           item = self.tree_cli.focus()
+           if not item:
+               return messagebox.showwarning("Aviso", "Selecione um cliente.")
+           valores = self.tree_cli.item(item, "values")
+           if messagebox.askyesno("Confirmar", f"Excluir CPF {valores[3]}?"):
+               erro = self.banco_dados.remove_usuario(valores[3])
+               if erro:
+                   messagebox.showerror("Erro", erro)
+               else:
+                   messagebox.showinfo("Sucesso", "Cliente excluído!")
+                   self._carregar_clientes()
+   
+       b_frame = Frame(page, bg=Color.white.value)
+       b_frame.grid(row=3, column=0, pady=10)
+       Button(b_frame, text="Editar",   bg="#FFA500", fg="white",
+              command=preencher_para_edicao).pack(side=LEFT, padx=10)
+       Button(b_frame, text="Excluir",  bg="#FF4444", fg="white",
+              command=excluir_cliente).pack(side=LEFT, padx=10)
+   
+       # ------------- Busca por CPF -------------------
+       busca_frame = Frame(page, bg=Color.white.value)
+       busca_frame.grid(row=4, column=0, pady=10)
+       Label(busca_frame, text="CPF:", bg=Color.white.value).pack(side=LEFT)
+       busca_entry = Entry(busca_frame)
+       busca_entry.pack(side=LEFT, padx=5)
+   
+       def _preencher_campos_cli(cli):
+           self._editar_cpf_ref = cli[3]
+           self.e_cli_nome.delete(0, END);  self.e_cli_nome.insert(0, cli[0])
+           self.e_cli_tel.delete(0, END);   self.e_cli_tel.insert(0, cli[1])
+           self.e_cli_email.delete(0, END); self.e_cli_email.insert(0, cli[2])
+           self.e_cli_cpf.delete(0, END);   self.e_cli_cpf.insert(0, cli[3])
+           self.e_cli_cep.delete(0, END);   self.e_cli_cep.insert(0, cli[4])
+   
+       def buscar_por_cpf():
+           cpf = busca_entry.get().strip()
+           for cli in self.banco_dados.listar_clientes():
+               if cli[3] == cpf:
+                   _preencher_campos_cli(cli)
+                   return messagebox.showinfo("Sucesso", "Cliente encontrado!")
+           messagebox.showinfo("Info", "Cliente não encontrado.")
+   
+       def excluir_por_cpf():
+           cpf = busca_entry.get().strip()
+           if not cpf:
+               return messagebox.showwarning("Aviso", "Digite um CPF.")
+           if messagebox.askyesno("Confirmar", f"Excluir CPF {cpf}?"):
+               erro = self.banco_dados.remove_usuario(cpf)
+               if erro:
+                   messagebox.showerror("Erro", erro)
+               else:
+                   messagebox.showinfo("Sucesso", "Cliente excluído!")
+                   self._carregar_clientes()
+   
+       Button(busca_frame, text="Buscar/Editar", command=buscar_por_cpf,
+              bg="#2196F3", fg="white").pack(side=LEFT, padx=5)
+       Button(busca_frame, text="Excluir por CPF", command=excluir_por_cpf,
+              bg="#D32F2F", fg="white").pack(side=LEFT, padx=5)
+   
+       # Carrega clientes logo que abre
+       self._carregar_clientes()
 
-        Label(page, text="Cadastro de Clientes", font=("Arial", 18, "bold"),
-              bg=Color.white.value).grid(row=0, column=0, pady=20)
-
-        # ------------------ Formulário
-        form = Frame(page, bg=Color.white.value)
-        form.grid(row=1, column=0, sticky="nsew")
-        for i in (0, 1):
-            form.grid_columnconfigure(i, weight=1)
-
-        self.e_cli_nome  = self._create_label_entry(form, "Nome",     row=0, col=0)
-        self.e_cli_tel   = self._create_label_entry(form, "Telefone", row=0, col=1)
-        self.e_cli_email = self._create_label_entry(form, "Email",    row=2, col=0)
-        self.e_cli_cpf   = self._create_label_entry(form, "CPF",      row=2, col=1)
-        self.e_cli_cep   = self._create_label_entry(form, "CEP",      row=4, col=0)
-
-        self._editar_cpf_ref = None  #  guarda CPF original durante edição
-
-        def salvar_cliente():
-            nome  = self.e_cli_nome.get().strip()
-            tel   = self.e_cli_tel.get().strip()
-            email = self.e_cli_email.get().strip()
-            cpf   = self.e_cli_cpf.get().strip()
-            cep   = self.e_cli_cep.get().strip()
-
-            if not (nome and tel and email and cpf and cep):
-                return messagebox.showerror("Erro", "Todos os campos são obrigatórios")
-
-            if self._editar_cpf_ref:
-                erro = self.banco_dados.update_usuario(cpf=self._editar_cpf_ref, new_name=nome,
-                                                       new_telefone=tel, new_email=email,
-                                                       new_cpf=cpf, new_cep=cep)
-            else:
-                erro = self.banco_dados.add_pessoa(nome, tel, email, cpf, cep)
-
-            if erro:
-                messagebox.showerror("Erro", erro)
-            else:
-                msg = "atualizado" if self._editar_cpf_ref else "adicionado"
-                messagebox.showinfo("Sucesso", f"Cliente {msg} com sucesso!")
-                self._editar_cpf_ref = None
-                self._carregar_clientes()
-
-        Button(form, text="Salvar", bg=Color.light_blue.value, fg="white",
-               font=("Arial", 12, "bold"), command=salvar_cliente).grid(row=5, column=1, pady=20)
-
-        # ------------------ Treeview
-        tree_frame = Frame(page)
-        tree_frame.grid(row=2, column=0, sticky="nsew", padx=20, pady=10)
-        page.grid_rowconfigure(2, weight=1)
-        tree_frame.grid_rowconfigure(0, weight=1)
-        tree_frame.grid_columnconfigure(0, weight=1)
-
-        cols = ("nome", "telefone", "email", "cpf", "cep")
-        self.tree_cli = ttk.Treeview(tree_frame, columns=cols, show="headings")
-        for col in cols:
-            self.tree_cli.heading(col, text=col.upper())
-            self.tree_cli.column(col, width=100, anchor="center")
-        self.tree_cli.grid(row=0, column=0, sticky="nsew")
-
-        scroll_cli = Scrollbar(tree_frame, orient="vertical", command=self.tree_cli.yview)
-        scroll_cli.grid(row=0, column=1, sticky="ns")
-        self.tree_cli.configure(yscrollcommand=scroll_cli.set)
-
-        # ------------------ Botões extra
-        def preencher_para_edicao():
-            item = self.tree_cli.focus()
-            if not item:
-                return messagebox.showwarning("Aviso", "Selecione um cliente.")
-            valores = self.tree_cli.item(item, "values")
-            self._editar_cpf_ref = valores[3]
-            self.e_cli_nome.delete(0, END);  self.e_cli_nome.insert(0, valores[0])
-            self.e_cli_tel.delete(0, END);   self.e_cli_tel.insert(0, valores[1])
-            self.e_cli_email.delete(0, END); self.e_cli_email.insert(0, valores[2])
-            self.e_cli_cpf.delete(0, END);   self.e_cli_cpf.insert(0, valores[3])
-            self.e_cli_cep.delete(0, END);   self.e_cli_cep.insert(0, valores[4])
-
-        def excluir_cliente():
-            item = self.tree_cli.focus()
-            if not item:
-                return messagebox.showwarning("Aviso", "Selecione um cliente.")
-            valores = self.tree_cli.item(item, "values")
-            if messagebox.askyesno("Confirmar", f"Excluir CPF {valores[3]}?"):
-                erro = self.banco_dados.remove_usuario(valores[3])
-                if erro:
-                    messagebox.showerror("Erro", erro)
-                else:
-                    messagebox.showinfo("Sucesso", "Cliente excluído!")
-                    self._carregar_clientes()
-
-        b_frame = Frame(page, bg=Color.white.value)
-        b_frame.grid(row=3, column=0, pady=10)
-        Button(b_frame, text="Editar", bg="#FFA500", fg="white",
-               command=preencher_para_edicao).pack(side=LEFT, padx=10)
-        Button(b_frame, text="Excluir", bg="#FF4444", fg="white",
-               command=excluir_cliente).pack(side=LEFT, padx=10)
-
-        # ------------------ Busca por CPF
-        busca_frame = Frame(page, bg=Color.white.value)
-        busca_frame.grid(row=4, column=0, pady=10)
-        Label(busca_frame, text="CPF:", bg=Color.white.value).pack(side=LEFT)
-        busca_entry = Entry(busca_frame)
-        busca_entry.pack(side=LEFT, padx=5)
-
-        def buscar_por_cpf():
-            cpf = busca_entry.get().strip()
-            for cli in self.banco_dados.listar_clientes():
-                if cli[3] == cpf:
-                    self._editar_cpf_ref = cli[3]
-                    self.e_cli_nome.delete(0, END);  self.e_cli_nome.insert(0, cli[0])
-                    self.e_cli_tel.delete(0, END);   self.e_cli_tel.insert(0, cli[1])
-                    self.e_cli_email.delete(0, END); self.e_cli_email.insert(0, cli[2])
-                    self.e_cli_cpf.delete(0, END);   self.e_cli_cpf.insert(0, cli[3])
-                    self.e_cli_cep.delete(0, END);   self.e_cli_cep.insert(0, cli[4])
-                    return messagebox.showinfo("Sucesso", "Cliente encontrado!")
-            messagebox.showinfo("Info", "Cliente não encontrado.")
-
-        def excluir_por_cpf():
-            cpf = busca_entry.get().strip()
-            if not cpf:
-                return messagebox.showwarning("Aviso", "Digite um CPF.")
-            if messagebox.askyesno("Confirmar", f"Excluir CPF {cpf}?"):
-                erro = self.banco_dados.remove_usuario(cpf)
-                if erro:
-                    messagebox.showerror("Erro", erro)
-                else:
-                    messagebox.showinfo("Sucesso", "Cliente excluído!")
-                    self._carregar_clientes()
-
-        Button(busca_frame, text="Buscar/Editar", command=buscar_por_cpf,
-               bg="#2196F3", fg="white").pack(side=LEFT, padx=5)
-        Button(busca_frame, text="Excluir por CPF", command=excluir_por_cpf,
-               bg="#D32F2F", fg="white").pack(side=LEFT, padx=5)
-
-        self._carregar_clientes()
-
+  
     def _carregar_clientes(self):
         self.tree_cli.delete(*self.tree_cli.get_children())
         for cli in self.banco_dados.listar_clientes():
@@ -392,4 +427,3 @@ class Application(Validate):
 if __name__ == "__main__":
     root = Tk()
     Application(root)
-
