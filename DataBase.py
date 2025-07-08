@@ -124,6 +124,14 @@ class Database_conect:
         self.close_connection()
         return "CPF invalido - Usuario ja cadastrado"
 
+    
+    def listar_clientes(self):
+        self.get_db_connection()
+        self.execute_query("SELECT nome, telefone, email, CPF, cep FROM pessoa")
+        resultados = self.cur.fetchall()
+        self.close_connection()
+        return resultados
+
     def add_produto(self, produto:str, quant:int, quant_min:int, preco_un:float, preco_cus:float):
         self.get_db_connection()
         
