@@ -5,7 +5,6 @@ from tkinter import messagebox
 from DataBase import *
 from Modules import *
 
-
 class Application(Validate):
     def __init__(self, root: 'Tk'):
         self.root = root
@@ -21,6 +20,7 @@ class Application(Validate):
         self.root.minsize(width=950, height=520)
         self.root.resizable(True, True)
         self.root.protocol('WM_DELETE_WINDOW', self.destroy_window)
+        self.validate_entry()
         self.frame_principal = Frame(self.root, background=Color.white.value)
 
         self.layout_sidebar()
@@ -53,6 +53,10 @@ class Application(Validate):
         self.header = Frame(self.frame_principal, height=50, background=Color.aqua_blue.value)
         self.header.grid(row=0, column=0, sticky="ew")
 
+    def validate_entry(self):
+        self.val = (self.root.register(self.validate_float), '%P')
+        self.val_cpf = (self.root.register(self.validate_cpf_entry), '%P')
+
     # ==============================================================
     # SEÇÃO DE PRODUTOS
     # ==============================================================
@@ -82,21 +86,25 @@ class Application(Validate):
         self.label_quant_estoque = Label(self.grid_produto, text="Estoque Atual", bg=Color.white.value)
         self.label_quant_estoque.grid(row=3, column=0, sticky="w", padx=10)
         self.entry_quant_estoque = Entry(self.grid_produto)
+        self.entry_quant_estoque.configure(validate= "key", validatecommand=self.val)
         self.entry_quant_estoque.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="ew")
 
         self.label_min_estoque = Label(self.grid_produto, text="Estoque Mínimo", bg=Color.white.value)
         self.label_min_estoque.grid(row=3, column=1, sticky="w", padx=10)
         self.entry_min_estoque = Entry(self.grid_produto)
+        self.entry_min_estoque.configure(validate= "key", validatecommand=self.val)
         self.entry_min_estoque.grid(row=4, column=1, padx=10, pady=(0, 10), sticky="ew")
 
         self.label_valor_venda = Label(self.grid_produto, text="Valor de Venda", bg=Color.white.value)
         self.label_valor_venda.grid(row=5, column=0, sticky="w", padx=10)
         self.entry_valor_venda = Entry(self.grid_produto)
+        self.entry_valor_venda.configure(validate= "key", validatecommand=self.val)
         self.entry_valor_venda.grid(row=6, column=0, padx=10, pady=(0, 10), sticky="ew")
 
         self.label_valor_custo = Label(self.grid_produto, text="Valor de Custo", bg=Color.white.value)
         self.label_valor_custo.grid(row=5, column=1, sticky="w", padx=10)
         self.entry_valor_custo = Entry(self.grid_produto)
+        self.entry_valor_custo.configure(validate= "key", validatecommand=self.val)
         self.entry_valor_custo.grid(row=6, column=1, padx=10, pady=(0, 10), sticky="ew")
 
         # Botões (padronizados)
