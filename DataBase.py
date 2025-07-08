@@ -404,8 +404,8 @@ class Database_conect:
 
         return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
-venda = {'lima': 5}
-db = Database_conect()
-db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
-db.add_produto("lima", 4, 2, 2.90, 0.50)
-print(db.new_venda(venda,"477.156.358-63"))
+#venda = {'lima': 5}
+#db = Database_conect()
+#db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
+#db.add_produto("lima", 4, 2, 2.90, 0.50)
+#print(db.new_venda(venda,"477.156.358-63"))
