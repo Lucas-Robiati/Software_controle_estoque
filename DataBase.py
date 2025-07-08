@@ -350,6 +350,12 @@ class Database_conect:
             self.close_connection()
             return "Pessoa nao encontrada"
 
+    def cliente_existe(self, cpf):
+        self.get_db_connection()
+        self.execute_query("SELECT 1 FROM pessoa WHERE cpf = %s", (cpf,))
+        return self.cur.fetchone() is not None
+
+
     def remove_usuario(self, cpf:str):
 
         self.get_db_connection()
