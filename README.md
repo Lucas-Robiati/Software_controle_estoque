@@ -5,7 +5,7 @@
 > dinamização das funcionalidades, ultilizaou-se python3 com as bibliotecas psycopg2 para a manipulação do banco, TKinter
 > para criação das interfaces, o sotware oferece um sistema de consulta dinamico em tempo real, assim como funcionalidades de cadastrar, remover e autualizar, produtos e clientes. Tambem é possivel registro de venda, assim como geração de relatorio de produtos vendidos no dia com data e hora registrados dinâmicamente. 
 
-## Metodlogia Àgil Utilizada  
+## Metodologia Àgil Utilizada  
 ### Kanban
 - Kanban, que significa "quadro de sinalização" em japonês, é uma abordagem visual para a gestão de projetos e processos. Ele utiliza um quadro com colunas que representam as diferentes etapas de um fluxo de trabalho, como "A fazer", "Em progresso" e "Concluído". As tarefas são representadas por cartões que são movidos pelas colunas conforme avançam no processo. 
 
