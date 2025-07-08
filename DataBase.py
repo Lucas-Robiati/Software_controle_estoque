@@ -124,7 +124,27 @@ class Database_conect:
         self.close_connection()
         return "CPF invalido - Usuario ja cadastrado"
 
-    def add_produto(self, produto:str, quant:int, quant_min:int, preco_un:float, preco_cus:float):
+    def listar_clientes(self):
+        self.get_db_connection()
+        self.execute_query("SELECT nome, telefone, email, CPF, cep FROM pessoa")
+        resultados = self.cur.fetchall()
+        self.close_connection()
+        return resultados
+
+    def excluir_cliente(self, cpf:str):
+        self.get_db_connection()
+
+        self.execute_query("SELECT id FROM pessoa WHERE CPF = %s", (cpf,))
+        if self.cur.fetchone() is None:
+            self.close_connection()
+            return "Cliente não encontrado"
+
+        self.execute_query("DELETE FROM pessoa WHERE CPF = %s", (cpf,))
+        self.conn.commit()
+        self.close_connection()
+        return None
+
+    def add_produto(self, produto:str, quant:int, quant_est_min:int, preco_un:float, preco_cus:float):
         self.get_db_connection()
         
         self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
