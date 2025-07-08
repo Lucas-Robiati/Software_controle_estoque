@@ -20,16 +20,6 @@ Redução de gargalos:
 Ao identificar e resolver gargalos no fluxo de trabalho, o Kanban ajuda a equipe a evitar atrasos e a manter o ritmo de trabalho. 
 Maior flexibilidade:
 
-## Tabela de conclusão
-- [x] Elaboração estrutural da interface - Arnaldo.
-- [x] Estruturação do Banco de Dados - Lucas.
-- [x] Criação das tabelas - Lucas. 
-- [x] Correção de Bugs na tabela de vendas - Lucas.
-- [x] Conecxão do cadastro usuário com o Banco - Milton.
-- [x] Validação Regex de campos do cadastro - Milton. 
-- [x] Falha de segurança, colocar validadores nos entrys - Arnaldo.
-- [x] Testes finais - Lucas, Arnaldo e Milton  
-
 ## ⚙️ Pré-requisitos 
 > dotenv==0.9.9 \
 greenlet==3.2.3 \
