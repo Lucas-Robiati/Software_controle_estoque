@@ -155,6 +155,11 @@ class Database_conect:
         if (msg == None):
             return "Usuario sem cadastro"
         
+        for key in produto.keys():
+            self.execute_query("SELECT quant_est FROM produto WHERE nome = %s",(key,))
+            estoque = self.cur.fetchone()[0]
+            if(estoque < produto[key]): return f"Produdo {key} nao tem esta quantidade em estoque"
+
         self.execute_query("SELECT NOW()")
         time = self.cur.fetchone()
         
@@ -168,7 +173,8 @@ class Database_conect:
             self.execute_query("SELECT id FROM produto WHERE nome = %s", (key,))
             produto_id = self.cur.fetchone()[0]
             self.execute_query("INSERT INTO produto_venda (venda_id, produto_id, quant_compra) VALUES (%s, %s, %s)",(msg, produto_id, produto[key]))
-        
+            self.execute_query("UPDATE produto SET quant_est = (quant_est - %s) WHERE nome = %s", (produto[key], key))
+
         self.conn.commit()
         self.close_connection()
 
@@ -362,8 +368,8 @@ class Database_conect:
 
         return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
-venda = {'lima': 2}
+venda = {'lima': 5}
 db = Database_conect()
 db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
 db.add_produto("lima", 4, 2, 2.90, 0.50)
-db.new_venda(venda,"477.156.358-63")
+print(db.new_venda(venda,"477.156.358-63"))
