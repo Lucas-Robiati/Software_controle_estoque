@@ -101,7 +101,7 @@ class Application(Validate):
 
         # Botões (padronizados)
         frame_botoes = Frame(self.grid_produto, bg=Color.white.value)
-        frame_botoes.grid(row=7, column=0, columnspan=2, pady=(0, 10), sticky="ew")
+        frame_botoes.grid(row=8, column=0, columnspan=2, pady=(0, 10), sticky="ew")
         frame_botoes.grid_columnconfigure((0, 1, 2), weight=1)
 
         Button(
@@ -584,7 +584,7 @@ class Application(Validate):
         self.e_cli_tel = self.create_label_entry(self.grid_clientes, "Telefone", row=1, col=1)
         self.e_cli_email = self.create_label_entry(self.grid_clientes, "Email", row=3, col=0)
         self.e_cli_cpf = self.create_label_entry(self.grid_clientes, "CPF", row=3, col=1)
-        self.e_cli_cep = self.create_label_entry(self.grid_clientes, "CEP", row=5, col=0)
+        self.e_cli_cep = self.create_label_entry(self.grid_clientes, "CEP", row=3, col=2)
 
         self._editar_cpf_ref = None  # guarda CPF original durante edição
 
@@ -682,40 +682,64 @@ class Application(Validate):
         
         self.e_cli_cpf.delete(0, END)
         self.e_cli_cpf.insert(0, valores[3])
-        
+
         self.e_cli_cep.delete(0, END)
-        self.e_cli_cep.insert(0, valores[4])
+        self.e_cli_cep.insert(0,valores[4])
+  
+
+
+
+
 
     def salvar_cliente(self):
-        """Salva um cliente no banco de dados"""
-        nome = self.e_cli_nome.get().strip()
-        tel = self.e_cli_tel.get().strip()
+        nome  = self.e_cli_nome.get().strip()
+        tel   = self.e_cli_tel.get().strip()
         email = self.e_cli_email.get().strip()
-        cpf = self.e_cli_cpf.get().strip()
-        cep = self.e_cli_cep.get().strip()
+        cpf   = self.e_cli_cpf.get().strip()
+        cep   = self.e_cli_cep.get().strip()
 
-        if not (nome and tel and email and cpf and cep):
-            return messagebox.showerror("Erro", "Todos os campos são obrigatórios")
+        # ----------- Validações
+        if not all((nome, tel, email, cpf, cep)):
+            return messagebox.showerror("Erro", "Todos os campos são obrigatórios.")
 
+        if not re.fullmatch(r"[A-Za-zÀ-ÿ\s]+", nome):
+            return messagebox.showerror("Erro", "Nome não pode conter números ou caracteres especiais.")
+
+        if not re.fullmatch(r"\d{10,11}", tel):
+            return messagebox.showerror("Erro", "Telefone deve conter 10 ou 11 dígitos numéricos.")
+
+        if not re.fullmatch(r"[\w\.-]+@[\w\.-]+\.\w{2,}", email):
+            return messagebox.showerror("Erro", "Email inválido. Ex.: usuario@gmail.com")
+
+        if not re.fullmatch(r"\d{3}\.\d{3}\.\d{3}-\d{2}", cpf):
+            return messagebox.showerror("Erro", "CPF deve estar no formato 000.000.000-00")
+        
+        if not re.fullmatch(r"\d{5}-\d{3}", cep):
+            return messagebox.showerror("Erro", "CEP deve estar no formato 00000-000")
+
+
+        # ----------- Chamada ao banco ---------------
         if self._editar_cpf_ref:
             erro = self.banco_dados.update_usuario(
                 cpf=self._editar_cpf_ref,
-                new_name=nome,
-                new_telefone=tel,
-                new_email=email,
-                new_cpf=cpf,
-                new_cep=cep
+                new_name=nome, new_telefone=tel,
+                new_email=email, new_cpf=cpf, new_cep=cep
             )
         else:
             erro = self.banco_dados.add_pessoa(nome, tel, email, cpf, cep)
 
         if erro:
-            messagebox.showerror("Erro", erro)
-        else:
-            msg = "atualizado" if self._editar_cpf_ref else "adicionado"
-            messagebox.showinfo("Sucesso", f"Cliente {msg} com sucesso!")
-            self._editar_cpf_ref = None
-            self.carregar_clientes()
+            return messagebox.showerror("Erro", erro)
+
+        msg = "atualizado" if self._editar_cpf_ref else "adicionado"
+        messagebox.showinfo("Sucesso", f"Cliente {msg} com sucesso! 🎉")
+
+        self._editar_cpf_ref = None
+        self.show_clientes()
+
+
+ 
+
 
     def excluir_cliente(self):
         """Remove um cliente do banco de dados"""
