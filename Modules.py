@@ -26,6 +26,16 @@ class Validate:
     formatted_text = " ".join(text.split())
     return formatted_text
 
+  def validate_float(self, text):
+    value = 0
+
+    if ((text == "") or (text == "-")): return True # Passou na validação
+    try:
+      value == float(text)
+    except ValueError:
+      return False                                  # Não passou na validação
+    return (0 <= value) or (0 >= value) 
+
   def validate_cpf_entry(text):
     value = 0
 
@@ -33,7 +43,7 @@ class Validate:
 
     if ((len(text) == 10) and (text == "-")): return True # Passou na validação
     
-    if (text == "."): return True
+    if (text == "." or text == ""): return True
     
     if(len(text) < 10):
       try:
