@@ -45,16 +45,20 @@ class Validate:
         return False
 
   def validate_cpf_entry(self, inserted_char, index, full_text):
+    # Permite inserção programática via .insert()
+    if not inserted_char or len(inserted_char) > 1:
+        return True
+
     try:
         index = int(index)
     except ValueError:
-        return False
+        return True  # Permite inserção programática com index inválido
 
     # Restringe o tamanho máximo a 14 caracteres
     if len(full_text) > 14:
         return False
 
-    # Permite texto vazio para edição parcial
+    # Permite deletar (edição parcial)
     if inserted_char == "":
         return True
 
@@ -67,11 +71,8 @@ class Validate:
         return inserted_char == "-"
 
     # Em outras posições, só números
-    if index not in [3, 7, 11]:
-        return inserted_char.isdigit()
+    return inserted_char.isdigit()
 
-    # Qualquer outra condição inválida
-    return False
 
   def validate_cpf(cpf: str) -> bool:
     # Expressão regular para formato exato 000.000.000-00

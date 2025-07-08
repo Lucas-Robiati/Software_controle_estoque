@@ -20,7 +20,7 @@ class Application(Validate):
         """Configura a janela principal"""
         self.root.title("Controle de Estoque")
         self.root.configure(background=Color.white.value)
-        self.root.geometry("950x520")
+        self.root.geometry("1080x720")
         self.root.minsize(width=950, height=520)
         self.root.resizable(True, True)
         self.root.protocol('WM_DELETE_WINDOW', self.destroy_window)
@@ -33,7 +33,7 @@ class Application(Validate):
     def layout_sidebar(self):
         """Configura a barra lateral"""
         self.root.grid_rowconfigure(0, weight=1)
-        self.sidebar = Frame(self.root, background=Color.light_blue.value, width=150)
+        self.sidebar = Frame(self.root, background=Color.light_blue.value, width=170)
         self.sidebar.grid_columnconfigure(0, weight=1)
         self.sidebar.grid(row=0, column=0, sticky="ns")
         self.sidebar.grid_propagate(False)
@@ -799,7 +799,7 @@ class Application(Validate):
         self.e_cli_tel = self.create_label_entry(self.grid_clientes, "Telefone", row=3, col=0)
         self.e_cli_email = self.create_label_entry(self.grid_clientes, "Email", row=3, col=1)
         self.e_cli_cpf = self.create_label_entry(self.grid_clientes, "CPF", row=5, col=0)
-        self.e_cli_cpf.config(validate="key", validatecommand=(self.validate_command_cpf, "%S", "%i", "%P"))
+        #self.e_cli_cpf.config(validate="key", validatecommand=(self.validate_command_cpf, "%S", "%i", "%P"))
         self.e_cli_cep = self.create_label_entry(self.grid_clientes, "CEP", row=5, col=1)
 
         self._editar_cpf_ref = None  # guarda CPF original durante edição
@@ -863,20 +863,22 @@ class Application(Validate):
 
         # Treeview de clientes
         self.tree_cli = ttk.Treeview(
-            self.grid_clientes,
-            columns=("nome", "telefone", "email", "cpf", "cep"),
-            show="headings"
-        )
+                self.grid_clientes,
+                columns=("cpf", "nome", "telefone", "email", "cep"),  # CPF primeiro
+                show="headings"
+            )
         self.tree_cli.grid(row=9, column=0, columnspan=2, sticky="nsew", padx=10, pady=(10, 10))
         self.grid_clientes.grid_rowconfigure(8, weight=1)
 
-        for col in ("nome", "telefone", "email", "cpf", "cep"):
-            self.tree_cli.heading(col, text=col.upper())
-            self.tree_cli.column(col, width=100, anchor="center")
+        # Definir os cabeçalhos na ordem desejada (CPF primeiro)
+        self.tree_cli.heading("cpf", text="CPF")
+        self.tree_cli.heading("nome", text="NOME")
+        self.tree_cli.heading("telefone", text="TELEFONE")
+        self.tree_cli.heading("email", text="EMAIL")
+        self.tree_cli.heading("cep", text="CEP")
 
-        scroll_cli = Scrollbar(self.grid_clientes, orient="vertical", command=self.tree_cli.yview)
-        scroll_cli.grid(row=9, column=2, sticky="ns")
-        self.tree_cli.configure(yscrollcommand=scroll_cli.set)
+        for col in ("cpf", "nome", "telefone", "email", "cep"):
+           self.tree_cli.column(col, width=100, anchor="center")
 
     def preparar_edicao_cliente(self):
         """Prepara os campos para edição de um cliente"""
@@ -884,24 +886,41 @@ class Application(Validate):
         if not item:
             return messagebox.showwarning("Aviso", "Selecione um cliente.")
         
-        valores = self.tree_cli.item(item, "values")
-        self._editar_cpf_ref = valores[3]
+        # Obter todos os valores do item selecionado
+        valores = self.tree_cli.item(item, 'values')
         
+        # Verificar se temos valores suficientes
+        if len(valores) < 5:  # CPF, nome, telefone, email, cep
+            return messagebox.showerror("Erro", "Dados do cliente incompletos.")
+        
+        cpf = valores[0]
+        nome = valores[1]
+        telefone = valores[2]
+        email = valores[3]
+        cep = valores[4]
+        
+        # Limpar e preencher todos os campos de uma vez
         self.e_cli_nome.delete(0, END)
-        self.e_cli_nome.insert(0, valores[0])
+        self.e_cli_nome.insert(0, nome)
         
         self.e_cli_tel.delete(0, END)
-        self.e_cli_tel.insert(0, valores[1])
+        self.e_cli_tel.insert(0, telefone)
         
         self.e_cli_email.delete(0, END)
-        self.e_cli_email.insert(0, valores[2])
+        self.e_cli_email.insert(0, email)
         
+        #self.e_cli_cpf.config(validate="none") 
         self.e_cli_cpf.delete(0, END)
-        self.e_cli_cpf.insert(0, valores[3])
+        self.e_cli_cpf.insert(0, cpf)
+        
+        #self.e_cli_cpf.config(validate="key", validatecommand=(self.validate_command_cpf, "%S", "%i", "%P"))
+        
 
         self.e_cli_cep.delete(0, END)
-        self.e_cli_cep.insert(0,valores[4])
-  
+        self.e_cli_cep.insert(0, cep)
+
+
+
     def salvar_cliente(self):
         nome  = self.e_cli_nome.get().strip()
         tel   = self.e_cli_tel.get().strip()
@@ -1001,7 +1020,10 @@ class Application(Validate):
         """Carrega todos os clientes na treeview"""
         self.tree_cli.delete(*self.tree_cli.get_children())
         for cli in self.banco_dados.listar_clientes():
-            self.tree_cli.insert("", "end", values=cli)
+            # Reorganiza os valores para colocar o CPF primeiro
+            # Assumindo que cli[3] é o CPF na tupla retornada pelo banco
+            valores = (cli[3], cli[0], cli[1], cli[2], cli[4])  # CPF, nome, tel, email, cep
+            self.tree_cli.insert("", "end", values=valores)
 
     def show_relatorio(self):
         """Mostra o relatório de vendas"""
@@ -1020,7 +1042,7 @@ class Application(Validate):
         ).grid(row=0, column=0, pady=(10, 20), sticky="n")
     
         # Treeview
-        colunas = ("id_venda", "cpf_cliente", "data_venda", "produto", "quantidade", "valor_unitario")
+        colunas = ("id_venda", "data_venda", "cpf_cliente", "produto", "quantidade", "valor_unitario")
         self.tree_relatorio = ttk.Treeview(
             self.grid_relatorio,
             columns=colunas,

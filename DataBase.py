@@ -222,7 +222,7 @@ class Database_conect:
 
             # Insere na tabela produto_venda com valor_unitario
             self.execute_query("""
-                INSERT INTO produto_venda (venda_id, produto_id, quant_compra, valor_unitario)
+                INSERT INTO produto_venda (venda_id, produto_id, quant_compra, valor_unit)
                 VALUES (%s, %s, %s, %s)
             """, (venda_id, produto_id, quantidade, valor_unitario))
 
