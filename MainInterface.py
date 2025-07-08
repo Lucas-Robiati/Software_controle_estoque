@@ -12,9 +12,6 @@ class Application(Validate):
         self.window()
         root.mainloop()
 
-    # ---------------------------------------------------------------------
-    #  ★  CONFIGURAÇÃO DA JANELA PRINCIPAL
-    # ---------------------------------------------------------------------
     def window(self):
         self.root.title("Controle de Estoque")
         self.root.configure(background=Color.white.value)
@@ -34,9 +31,7 @@ class Application(Validate):
         # Tela inicial: Produtos
         self.layout_produtos()
 
-    # ------------------------------------------------------------------
-    #  ★  SIDEBAR (botões de navegação)
-    # ------------------------------------------------------------------
+
     def layout_sidebar(self):
         self.root.grid_rowconfigure(0, weight=1)
         self.sidebar = Frame(self.root, background=Color.light_blue.value, width=150)
@@ -64,9 +59,6 @@ class Application(Validate):
         btn.grid(sticky="ew", pady=10, padx=10)
         return btn
 
-    # ------------------------------------------------------------------
-    #  ★  CABEÇALHO (linha superior)
-    # ------------------------------------------------------------------
     def layout_header(self):
         self.frame_principal.grid_rowconfigure(1, weight=1)
         self.frame_principal.grid_columnconfigure(0, weight=1)
@@ -76,9 +68,7 @@ class Application(Validate):
         Label(self.header, text="Sistema de Controle", bg=Color.aqua_blue.value,
               fg=Color.white.value, font=("Helvetica", 14, "bold")).pack(side=LEFT, padx=20)
 
-    # ------------------------------------------------------------------
-    #  ★  TELA – PRODUTOS
-    # ------------------------------------------------------------------
+
     def layout_produtos(self):
         self.clear_main_content()
 
@@ -147,9 +137,7 @@ class Application(Validate):
 
         self.carregar_produtos()
 
-    # ------------------------------------------------------------------
-    #  ★  CRUD – PRODUTOS (Banco de Dados)
-    # ------------------------------------------------------------------
+
     def preencher_treeview(self, produtos):
         self.tree_produtos.delete(*self.tree_produtos.get_children())
         for p in produtos:
@@ -230,9 +218,6 @@ class Application(Validate):
                 self.carregar_produtos()
                 messagebox.showinfo("Sucesso", "Produto deletado!")
 
-    # ------------------------------------------------------------------
-    #  ★  TELA – CLIENTES
-    # ------------------------------------------------------------------
     def _show_clientes(self):
         """Tela de cadastro/consulta de clientes."""
         self.clear_main_content()
@@ -403,9 +388,7 @@ class Application(Validate):
         self.root.destroy()
 
 
-# -------------------------------------------------------------------------
-#  ★  EXECUÇÃO
-# -------------------------------------------------------------------------
+
 if __name__ == "__main__":
     root = Tk()
     Application(root)
