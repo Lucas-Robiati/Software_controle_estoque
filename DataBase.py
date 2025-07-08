@@ -144,7 +144,7 @@ class Database_conect:
         self.close_connection()
         return None
 
-    def add_produto(self, produto:str, quant:int, quant_est_min:int, preco_un:float, preco_cus:float):
+    def add_produto(self, produto:str, quant:int, quant_min:int, preco_un:float, preco_cus:float):
         self.get_db_connection()
         
         self.execute_query("SELECT nome FROM produto WHERE nome = %s", (produto,))
@@ -263,6 +263,24 @@ class Database_conect:
     
         return "Identificadores vazios, coloque almenos um nome produto ou o id"
 
+    def aumentar_estoque(self, produto, quant_aumentar):
+        self.get_db_connection()
+
+        self.execute_query("SELECT quant_est FROM produto WHERE nome = %s", (produto,))
+        resultado = self.cur.fetchone()
+        if resultado is None:
+            self.close_connection()
+            return f"Produto '{produto}' não encontrado."
+
+        quant_atual = resultado[0] or 0
+        nova_quant = quant_atual + quant_aumentar
+
+        self.execute_query("UPDATE produto SET quant_est = %s WHERE nome = %s", (nova_quant, produto))
+        self.conn.commit()
+        self.close_connection()
+        return None
+
+
     def remove_produto(self, id: int = None, produto: str = None):
         if id is None and produto is None:
             return "Identificadores vazios, forneça o ID ou o nome do produto"
@@ -378,4 +396,4 @@ venda = {'lima': 2}
 db = Database_conect()
 db.add_pessoa("Lucas Robiati","17996683675","lucas@gmail.com","477.156.358-63","15780-000")
 db.add_produto("lima", 4, 2, 2.90, 0.50)
-#db.new_venda(venda,"477.156.358-63")
+db.new_venda(venda,"477.156.358-63")
