@@ -799,7 +799,6 @@ class Application(Validate):
         self.e_cli_tel = self.create_label_entry(self.grid_clientes, "Telefone", row=3, col=0)
         self.e_cli_email = self.create_label_entry(self.grid_clientes, "Email", row=3, col=1)
         self.e_cli_cpf = self.create_label_entry(self.grid_clientes, "CPF", row=5, col=0)
-        #self.e_cli_cpf.config(validate="key", validatecommand=(self.validate_command_cpf, "%S", "%i", "%P"))
         self.e_cli_cep = self.create_label_entry(self.grid_clientes, "CEP", row=5, col=1)
 
         self._editar_cpf_ref = None  # guarda CPF original durante edição
@@ -864,27 +863,28 @@ class Application(Validate):
         # Treeview de clientes
         self.tree_cli = ttk.Treeview(
                 self.grid_clientes,
-                columns=("cpf", "nome", "telefone", "email", "cep"),  # CPF primeiro
+                columns=("nome", "telefone", "email", "cpf", "cep"),  # CPF primeiro
                 show="headings"
             )
         self.tree_cli.grid(row=9, column=0, columnspan=2, sticky="nsew", padx=10, pady=(10, 10))
         self.grid_clientes.grid_rowconfigure(8, weight=1)
 
         # Definir os cabeçalhos na ordem desejada (CPF primeiro)
-        self.tree_cli.heading("cpf", text="CPF")
         self.tree_cli.heading("nome", text="NOME")
         self.tree_cli.heading("telefone", text="TELEFONE")
         self.tree_cli.heading("email", text="EMAIL")
+        self.tree_cli.heading("cpf", text="CPF")
         self.tree_cli.heading("cep", text="CEP")
 
-        for col in ("cpf", "nome", "telefone", "email", "cep"):
+        for col in ("nome", "telefone", "email", "cpf", "cep"):
            self.tree_cli.column(col, width=100, anchor="center")
 
     def preparar_edicao_cliente(self):
         """Prepara os campos para edição de um cliente"""
-        item = self.tree_cli.focus()
-        if not item:
+        sel = self.tree_cli.selection()
+        if not sel:
             return messagebox.showwarning("Aviso", "Selecione um cliente.")
+        item = sel[0]
         
         # Obter todos os valores do item selecionado
         valores = self.tree_cli.item(item, 'values')
@@ -893,12 +893,18 @@ class Application(Validate):
         if len(valores) < 5:  # CPF, nome, telefone, email, cep
             return messagebox.showerror("Erro", "Dados do cliente incompletos.")
         
-        cpf = valores[0]
-        nome = valores[1]
-        telefone = valores[2]
-        email = valores[3]
+        cpf = valores[3]
+        nome = valores[0]
+        telefone = valores[1]
+        email = valores[2]
         cep = valores[4]
-        
+
+        self._editar_cpf_ref = cpf
+
+        self.root.after(10, lambda: self.preencher_campos(nome, telefone, email, cpf, cep))
+
+
+    def preencher_campos(self, nome, telefone, email, cpf, cep):    
         # Limpar e preencher todos os campos de uma vez
         self.e_cli_nome.delete(0, END)
         self.e_cli_nome.insert(0, nome)
@@ -918,7 +924,6 @@ class Application(Validate):
 
         self.e_cli_cep.delete(0, END)
         self.e_cli_cep.insert(0, cep)
-
 
 
     def salvar_cliente(self):
@@ -952,8 +957,7 @@ class Application(Validate):
         if self._editar_cpf_ref:
             erro = self.banco_dados.update_usuario(
                 cpf=self._editar_cpf_ref,
-                new_name=nome, new_telefone=tel,
-                new_email=email, new_cpf=cpf, new_cep=cep
+                new_name=nome, new_telefone=tel, new_cpf=cpf, new_cep=cep,new_email=email
             )
         else:
             erro = self.banco_dados.add_pessoa(nome, tel, email, cpf, cep)
@@ -1022,7 +1026,7 @@ class Application(Validate):
         for cli in self.banco_dados.listar_clientes():
             # Reorganiza os valores para colocar o CPF primeiro
             # Assumindo que cli[3] é o CPF na tupla retornada pelo banco
-            valores = (cli[3], cli[0], cli[1], cli[2], cli[4])  # CPF, nome, tel, email, cep
+            valores = (cli[0], cli[1], cli[2], cli[3], cli[4])  # CPF, nome, tel, email, cep
             self.tree_cli.insert("", "end", values=valores)
 
     def show_relatorio(self):
@@ -1092,9 +1096,15 @@ class Application(Validate):
         Label(parent, text=text, bg=Color.white.value).grid(
             row=row, column=col, columnspan=col_span, sticky="w", padx=(0, 5), pady=(0, 2)
         )
-        entry = Entry(parent, validate="key", validatecommand=(validate_command, "%P"))
+        
+        if validate_command:
+            entry = Entry(parent, validate="key", validatecommand=(validate_command, "%P"))
+        else:
+            entry = Entry(parent)
+    
         entry.grid(row=row+1, column=col, columnspan=col_span, padx=(0, 5), pady=(0, 10), sticky="ew")
         return entry
+
 
     def clear_main_content(self):
         """Remove todos os widgets (exceto header) da área de conteúdo"""
